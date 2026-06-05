@@ -78,9 +78,9 @@ func main() {
 			err := char.EnableNotifications(func(buf []byte) {
 				// Find explanation in README under "EnableNotifications callback" onn why
 				// buffer needs to be copied to prevent callback from silently failing.
-				slog.Debug("Notification received\n", "characteristic", char.String(), "message_buf", buf2, "message_hex", hex.EncodeToString(buf2))
 				buf2 := make([]byte, len(buf))
 				copy(buf2, buf)
+				slog.Debug("Notification received\n", "characteristic", char.String(), "message_buf", buf2, "message_hex", hex.EncodeToString(buf2))
 				fmt.Printf("%s\n", buf2)
 			})
 			if err != nil {
@@ -98,7 +98,7 @@ func main() {
 		time.Sleep(time.Millisecond * 100)
 		
 		// Optional: Print a dot every few seconds to prove the code hasn't crashed
-		print(".") 
+		// print(".") 
 	}
 	println("endd")
 }
