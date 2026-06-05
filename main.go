@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/hex"
 	"fmt"
 	"log/slog"
 
@@ -28,7 +27,7 @@ func main() {
 	slog.New(slog.NewTextHandler(os.Stdout, nil))
 
 	// Set the minimum level to DEBUG to include debug logs, or INFO
-    slog.SetLogLoggerLevel(slog.LevelDebug)
+    slog.SetLogLoggerLevel(slog.LevelInfo)
 
 	// 1. Enable the BLE adapter
 	must(adapter.Enable())
@@ -80,8 +79,10 @@ func main() {
 				// buffer needs to be copied to prevent callback from silently failing.
 				buf2 := make([]byte, len(buf))
 				copy(buf2, buf)
-				slog.Debug("Notification received\n", "characteristic", char.String(), "message_buf", buf2, "message_hex", hex.EncodeToString(buf2))
 				fmt.Printf("%s\n", buf2)
+
+				// slog CANNOT be used here, because it does heap allocation
+				// slog.Debug("nNotification received\n", "characteristic", char.String(), "message_buf", buf2, "message_hex", hex.EncodeToString(buf2))
 			})
 			if err != nil {
 				slog.Debug("Could not enable notifications\n", "characteristic", char.String(), "error", err.Error())
