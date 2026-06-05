@@ -6,6 +6,7 @@ import (
 	"log/slog"
 
 	"os"
+	"time"
 	"tinygo.org/x/bluetooth"
 )
 
@@ -44,6 +45,7 @@ func main() {
 	// Set the handler before connecting or advertising
     adapter.SetConnectHandler(func(device bluetooth.Device, connected bool) {
         if connected {
+        	// device.RequestMTU(247)
             fmt.Println("device connected:", device.Address.String())
         } else {
             fmt.Println("device DISCONNECTED:", device.Address.String())
@@ -74,8 +76,12 @@ func main() {
 			slog.Debug("Found Characteristic\n", "characteristic", char.String())
 
 			err := char.EnableNotifications(func(buf []byte) {
-				slog.Debug("Notification received\n", "characteristic", char.String(), "message_buf", buf, "message_hex", hex.EncodeToString(buf))
-				fmt.Printf("%s\n", buf)
+				// Find explanation in README under "EnableNotifications callback" onn why
+				// buffer needs to be copied to prevent callback from silently failing.
+				slog.Debug("Notification received\n", "characteristic", char.String(), "message_buf", buf2, "message_hex", hex.EncodeToString(buf2))
+				buf2 := make([]byte, len(buf))
+				copy(buf2, buf)
+				fmt.Printf("%s\n", buf2)
 			})
 			if err != nil {
 				slog.Debug("Could not enable notifications\n", "characteristic", char.String(), "error", err.Error())
@@ -87,7 +93,14 @@ func main() {
 	}
 
 	// Keep the program running to receive notifications
-	select {}
+	for {
+		// Small sleep allows the scheduler to run but keeps the loop alive
+		time.Sleep(time.Millisecond * 100)
+		
+		// Optional: Print a dot every few seconds to prove the code hasn't crashed
+		print(".") 
+	}
+	println("endd")
 }
 
 func must(err error) {
