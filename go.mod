@@ -1,4 +1,4 @@
-module blugate
+module blugate_toggle
 
 go 1.24.6
 

@@ -5,7 +5,6 @@ import (
 	"log/slog"
 
 	"os"
-	"time"
 	"tinygo.org/x/bluetooth"
 )
 
@@ -27,7 +26,7 @@ func main() {
 	slog.New(slog.NewTextHandler(os.Stdout, nil))
 
 	// Set the minimum level to DEBUG to include debug logs, or INFO
-    slog.SetLogLoggerLevel(slog.LevelInfo)
+    slog.SetLogLoggerLevel(slog.LevelDebug)
 
 	// 1. Enable the BLE adapter
 	must(adapter.Enable())
@@ -57,7 +56,7 @@ func main() {
 	defer device.Disconnect()
 
 	serviceUUID, _ := bluetooth.ParseUUID("b2bbc642-46da-11ed-b878-0242ac120002")
-	charUUID, _ := bluetooth.ParseUUID("9f0921bf-c468-46bd-a724-b95bfa95541e")
+	charUUID, _ := bluetooth.ParseUUID("c9af9c76-46de-11ed-b878-0242ac120002")
 
 	// 4. Discover Services
 	services, err := device.DiscoverServices([]bluetooth.UUID{serviceUUID}) // nil gets all services
@@ -74,34 +73,16 @@ func main() {
 			// or you can filter by char.UUID()
 			slog.Debug("Found Characteristic\n", "characteristic", char.String())
 
-			err := char.EnableNotifications(func(buf []byte) {
-				// Find explanation in README under "EnableNotifications callback" onn why
-				// buffer needs to be copied to prevent callback from silently failing.
-				buf2 := make([]byte, len(buf))
-				copy(buf2, buf)
-				fmt.Printf("%s\n", buf2)
-
-				// slog CANNOT be used here, because it does heap allocation
-				// slog.Debug("nNotification received\n", "characteristic", char.String(), "message_buf", buf2, "message_hex", hex.EncodeToString(buf2))
-			})
+			buf := make([]byte, 1)
+			n, err := char.Read(buf)
 			if err != nil {
-				slog.Debug("Could not enable notifications\n", "characteristic", char.String(), "error", err.Error())
+				slog.Debug("Could NOT read from characteristic\n", "characteristic", char.String(), "error", err.Error())
 			} else {
-				fmt.Printf("Receiving...\n")
-				slog.Debug("Enabled notifications for characteristic\n", "characteristic", char.String())
+				slog.Debug("Read characteristic\n", "characteristic", char.String(), "value", n)
 			}
+			return
 		}
 	}
-
-	// Keep the program running to receive notifications
-	for {
-		// Small sleep allows the scheduler to run but keeps the loop alive
-		time.Sleep(time.Millisecond * 100)
-		
-		// Optional: Print a dot every few seconds to prove the code hasn't crashed
-		// print(".") 
-	}
-	println("endd")
 }
 
 func must(err error) {
